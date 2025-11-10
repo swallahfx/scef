@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}SCEF - ML Features{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Feature Engineering</h1>
+    <div>
+        <a href="/ml" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to ML
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Available Features</h5>
+            </div>
+            <div class="card-body">
+                <p>This page allows you to explore and visualize features extracted from market data.</p>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> 
+                    To use feature engineering, first create and train a model from the 
+                    <a href="/ml/models">ML Models</a> page.
+                </div>
+                
+                <h5 class="mt-4">Technical Indicators</h5>
+                <ul>
+                    <li><strong>Price-based Features:</strong> Returns, Moving Averages (SMA, EMA)</li>
+                    <li><strong>Volatility Indicators:</strong> Bollinger Bands, ATR, Standard Deviation</li>
+                    <li><strong>Momentum Indicators:</strong> RSI, MACD, ROC</li>
+                    <li><strong>Volume Indicators:</strong> OBV, Volume SMA, Volume Rate of Change</li>
+                </ul>
+                
+                <h5 class="mt-4">Time-based Features</h5>
+                <ul>
+                    <li><strong>Calendar Features:</strong> Day of week, Month, Quarter</li>
+                    <li><strong>Cyclical Encodings:</strong> Sine/Cosine transformations</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Feature Visualization</h5>
+            </div>
+            <div class="card-body text-center">
+                <p>Feature visualization will be available after training a model.</p>
+                <a href="/ml/models" class="btn btn-primary">Train a Model</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

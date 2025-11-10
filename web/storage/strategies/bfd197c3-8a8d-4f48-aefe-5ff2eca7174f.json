@@ -1,0 +1,1 @@
+{"id": "bfd197c3-8a8d-4f48-aefe-5ff2eca7174f", "name": "Moving Avg", "description": "simple ma", "components": [{"name": "sma_725", "type": "indicator", "function": "sma", "parameters": {"window": 20, "column": "close"}}]}

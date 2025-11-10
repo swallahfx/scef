@@ -1,0 +1,741 @@
+{% extends "base.html" %}
+
+{% block title %}SCEF - Strategies{% endblock %}
+
+{% block extra_css %}
+<style>
+    .component-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .drag-handle {
+        cursor: move;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Trading Strategies</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStrategyModal">
+        <i class="bi bi-plus-circle"></i> Create New Strategy
+    </button>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Your Strategies</h5>
+            </div>
+            <div class="card-body">
+                <div id="strategies-list" class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Components</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="strategies-table-body">
+                            <!-- Strategies will be loaded here -->
+                            <tr>
+                                <td colspan="4" class="text-center">Loading strategies...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Strategy Modal -->
+<div class="modal fade" id="createStrategyModal" tabindex="-1" aria-labelledby="createStrategyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createStrategyModalLabel">Create New Strategy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createStrategyForm">
+                    <div class="mb-3">
+                        <label for="strategy-name" class="form-label">Strategy Name</label>
+                        <input type="text" class="form-control" id="strategy-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="strategy-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="strategy-description" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6>Components</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="nav nav-tabs" id="componentsTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="indicators-tab" data-bs-toggle="tab" data-bs-target="#indicators-tab-pane" type="button" role="tab" aria-controls="indicators-tab-pane" aria-selected="true">Indicators</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="signals-tab" data-bs-toggle="tab" data-bs-target="#signals-tab-pane" type="button" role="tab" aria-controls="signals-tab-pane" aria-selected="false">Signals</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="allocations-tab" data-bs-toggle="tab" data-bs-target="#allocations-tab-pane" type="button" role="tab" aria-controls="allocations-tab-pane" aria-selected="false">Allocations</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="risks-tab" data-bs-toggle="tab" data-bs-target="#risks-tab-pane" type="button" role="tab" aria-controls="risks-tab-pane" aria-selected="false">Risk</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="executions-tab" data-bs-toggle="tab" data-bs-target="#executions-tab-pane" type="button" role="tab" aria-controls="executions-tab-pane" aria-selected="false">Execution</button>
+                                        </li>
+                                    </ul>
+                                    <div class="tab-content mt-2" id="componentsTabsContent">
+                                        <div class="tab-pane fade show active" id="indicators-tab-pane" role="tabpanel" aria-labelledby="indicators-tab" tabindex="0">
+                                            <div class="list-group component-list">
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="indicator" data-component-function="sma">Simple Moving Average (SMA)</button>
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="indicator" data-component-function="ema">Exponential Moving Average (EMA)</button>
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="indicator" data-component-function="macd">Moving Average Convergence Divergence (MACD)</button>
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="indicator" data-component-function="rsi">Relative Strength Index (RSI)</button>
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="indicator" data-component-function="bollinger_bands">Bollinger Bands</button>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="signals-tab-pane" role="tabpanel" aria-labelledby="signals-tab" tabindex="0">
+                                            <div class="list-group component-list">
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="signal" data-component-function="dual_ma_crossover">MA Crossover Signal</button>
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="signal" data-component-function="rsi_filter">RSI Filter Signal</button>
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="signal" data-component-function="macd_signal">MACD Signal</button>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="allocations-tab-pane" role="tabpanel" aria-labelledby="allocations-tab" tabindex="0">
+                                            <div class="list-group component-list">
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="allocation" data-component-function="position_sizer">Simple Position Sizer</button>
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="allocation" data-component-function="volatility_position_sizer">Volatility-Based Position Sizer</button>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="risks-tab-pane" role="tabpanel" aria-labelledby="risks-tab" tabindex="0">
+                                            <div class="list-group component-list">
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="risk_control" data-component-function="max_position_limit">Maximum Position Limit</button>
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="risk_control" data-component-function="stop_loss">Stop Loss</button>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="executions-tab-pane" role="tabpanel" aria-labelledby="executions-tab" tabindex="0">
+                                            <div class="list-group component-list">
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="execution" data-component-function="simple_execution">Simple Execution</button>
+                                                <button type="button" class="list-group-item list-group-item-action" data-component-type="post_trade" data-component-function="trade_analyzer">Trade Analyzer</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-9">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6>Strategy Components</h6>
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="clear-components">Clear All</button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group" id="selected-components">
+                                        <!-- Selected components will appear here -->
+                                        <li class="list-group-item text-center text-muted">Drag components here from the left panel</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6>Component Configuration</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="component-config">
+                                        <!-- Component configuration will appear here -->
+                                        <p class="text-center text-muted">Select a component to configure</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-strategy">Save Strategy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Strategy Details Modal -->
+<div class="modal fade" id="strategyDetailsModal" tabindex="-1" aria-labelledby="strategyDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="strategyDetailsModalLabel">Strategy Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="strategy-details-content">
+                    <!-- Strategy details will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="backtest-strategy-btn">Backtest</button>
+                <button type="button" class="btn btn-danger" id="deploy-strategy-btn">Deploy</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load all strategies
+        loadStrategies();
+        
+        // Component selection
+        document.querySelectorAll('.list-group-item[data-component-type]').forEach(item => {
+            item.addEventListener('click', function() {
+                const type = this.getAttribute('data-component-type');
+                const func = this.getAttribute('data-component-function');
+                addComponent(type, func, this.textContent);
+            });
+        });
+        
+        // Clear components
+        document.getElementById('clear-components').addEventListener('click', function() {
+            document.getElementById('selected-components').innerHTML = 
+                '<li class="list-group-item text-center text-muted">Drag components here from the left panel</li>';
+            document.getElementById('component-config').innerHTML = 
+                '<p class="text-center text-muted">Select a component to configure</p>';
+        });
+        
+        // Save strategy
+        document.getElementById('save-strategy').addEventListener('click', saveStrategy);
+    });
+    
+    function loadStrategies() {
+        fetch('/api/strategies')
+            .then(response => response.json())
+            .then(strategies => {
+                const tableBody = document.getElementById('strategies-table-body');
+                
+                if (strategies.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No strategies found. Create your first strategy!</td></tr>';
+                    return;
+                }
+                
+                tableBody.innerHTML = '';
+                
+                strategies.forEach(strategy => {
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${strategy.name}</td>
+                        <td>${strategy.description || 'No description'}</td>
+                        <td>${strategy.components ? strategy.components.length : 0} components</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary view-strategy-btn" data-strategy-id="${strategy.id}">View</button>
+                            <button class="btn btn-sm btn-outline-success backtest-btn" data-strategy-id="${strategy.id}">Backtest</button>
+                            <button class="btn btn-sm btn-outline-danger deploy-btn" data-strategy-id="${strategy.id}">Deploy</button>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+                // Add event listeners to buttons
+                document.querySelectorAll('.view-strategy-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const strategyId = this.getAttribute('data-strategy-id');
+                        showStrategyDetails(strategyId);
+                    });
+                });
+                
+                document.querySelectorAll('.backtest-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const strategyId = this.getAttribute('data-strategy-id');
+                        window.location.href = `/backtest?strategy=${strategyId}`;
+                    });
+                });
+                
+                document.querySelectorAll('.deploy-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const strategyId = this.getAttribute('data-strategy-id');
+                        window.location.href = `/deploy?strategy=${strategyId}`;
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Error loading strategies:', error);
+                document.getElementById('strategies-table-body').innerHTML = 
+                    `<tr><td colspan="4" class="text-center text-danger">Error loading strategies: ${error}</td></tr>`;
+            });
+    }
+    
+    function addComponent(type, func, displayName) {
+        const componentsList = document.getElementById('selected-components');
+        
+        // Remove placeholder if present
+        if (componentsList.querySelector('.text-muted')) {
+            componentsList.innerHTML = '';
+        }
+        
+        const componentId = 'component-' + Date.now();
+        const componentItem = document.createElement('li');
+        componentItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+        componentItem.setAttribute('data-component-id', componentId);
+        componentItem.setAttribute('data-component-type', type);
+        componentItem.setAttribute('data-component-function', func);
+        
+        componentItem.innerHTML = `
+            <div>
+                <span class="drag-handle me-2">☰</span>
+                <span class="component-name">${displayName}</span>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-primary configure-component-btn" data-component-id="${componentId}">Configure</button>
+                <button class="btn btn-sm btn-outline-danger remove-component-btn" data-component-id="${componentId}">Remove</button>
+            </div>
+        `;
+        
+        componentsList.appendChild(componentItem);
+        
+        // Add event listeners
+        componentItem.querySelector('.remove-component-btn').addEventListener('click', function() {
+            componentItem.remove();
+            
+            if (componentsList.children.length === 0) {
+                componentsList.innerHTML = '<li class="list-group-item text-center text-muted">Drag components here from the left panel</li>';
+            }
+            
+            document.getElementById('component-config').innerHTML = 
+                '<p class="text-center text-muted">Select a component to configure</p>';
+        });
+        
+        componentItem.querySelector('.configure-component-btn').addEventListener('click', function() {
+            showComponentConfig(componentId, type, func);
+        });
+        
+        // Show configuration for the newly added component
+        showComponentConfig(componentId, type, func);
+    }
+    
+    function showComponentConfig(componentId, type, func) {
+        const configContainer = document.getElementById('component-config');
+        const componentItem = document.querySelector(`[data-component-id="${componentId}"]`);
+        
+        // Get component name from the component
+        const componentName = componentItem.querySelector('.component-name').textContent;
+        
+        let configHTML = `
+            <h5>${componentName}</h5>
+            <div class="mb-3">
+                <label for="${componentId}-name" class="form-label">Component Name</label>
+                <input type="text" class="form-control" id="${componentId}-name" value="${func}_${Math.floor(Math.random() * 1000)}">
+            </div>
+        `;
+        
+        // Add specific parameters based on component type and function
+        if (func === 'sma' || func === 'ema') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-window" class="form-label">Window Size</label>
+                    <input type="number" class="form-control" id="${componentId}-window" value="${func === 'sma' ? 20 : 10}" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-column" class="form-label">Price Column</label>
+                    <select class="form-control" id="${componentId}-column">
+                        <option value="close" selected>Close</option>
+                        <option value="open">Open</option>
+                        <option value="high">High</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            `;
+        } else if (func === 'macd') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-fast-window" class="form-label">Fast Period</label>
+                    <input type="number" class="form-control" id="${componentId}-fast-window" value="12" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-slow-window" class="form-label">Slow Period</label>
+                    <input type="number" class="form-control" id="${componentId}-slow-window" value="26" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-signal-window" class="form-label">Signal Period</label>
+                    <input type="number" class="form-control" id="${componentId}-signal-window" value="9" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-column" class="form-label">Price Column</label>
+                    <select class="form-control" id="${componentId}-column">
+                        <option value="close" selected>Close</option>
+                        <option value="open">Open</option>
+                        <option value="high">High</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            `;
+        } else if (func === 'rsi') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-window" class="form-label">Window Size</label>
+                    <input type="number" class="form-control" id="${componentId}-window" value="14" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-column" class="form-label">Price Column</label>
+                    <select class="form-control" id="${componentId}-column">
+                        <option value="close" selected>Close</option>
+                        <option value="open">Open</option>
+                        <option value="high">High</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            `;
+        } else if (func === 'bollinger_bands') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-window" class="form-label">Window Size</label>
+                    <input type="number" class="form-control" id="${componentId}-window" value="20" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-num-std" class="form-label">Number of Standard Deviations</label>
+                    <input type="number" class="form-control" id="${componentId}-num-std" value="2.0" min="0.1" step="0.1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-column" class="form-label">Price Column</label>
+                    <select class="form-control" id="${componentId}-column">
+                        <option value="close" selected>Close</option>
+                        <option value="open">Open</option>
+                        <option value="high">High</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            `;
+        } else if (func === 'dual_ma_crossover') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-fast-period" class="form-label">Fast MA Period</label>
+                    <input type="number" class="form-control" id="${componentId}-fast-period" value="20" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-slow-period" class="form-label">Slow MA Period</label>
+                    <input type="number" class="form-control" id="${componentId}-slow-period" value="50" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-column" class="form-label">Price Column</label>
+                    <select class="form-control" id="${componentId}-column">
+                        <option value="close" selected>Close</option>
+                        <option value="open">Open</option>
+                        <option value="high">High</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            `;
+        } else if (func === 'rsi_filter') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-threshold-low" class="form-label">Oversold Threshold</label>
+                    <input type="number" class="form-control" id="${componentId}-threshold-low" value="30" min="0" max="100">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-threshold-high" class="form-label">Overbought Threshold</label>
+                    <input type="number" class="form-control" id="${componentId}-threshold-high" value="70" min="0" max="100">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-column" class="form-label">Price Column</label>
+                    <select class="form-control" id="${componentId}-column">
+                        <option value="close" selected>Close</option>
+                        <option value="open">Open</option>
+                        <option value="high">High</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            `;
+        } else if (func === 'macd_signal') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-fast-period" class="form-label">Fast MA Period</label>
+                    <input type="number" class="form-control" id="${componentId}-fast-period" value="12" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-slow-period" class="form-label">Slow MA Period</label>
+                    <input type="number" class="form-control" id="${componentId}-slow-period" value="26" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-signal-period" class="form-label">Signal Period</label>
+                    <input type="number" class="form-control" id="${componentId}-signal-period" value="9" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-column" class="form-label">Price Column</label>
+                    <select class="form-control" id="${componentId}-column">
+                        <option value="close" selected>Close</option>
+                        <option value="open">Open</option>
+                        <option value="high">High</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            `;
+        } else if (func === 'position_sizer' || func === 'max_position_limit') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-max-position" class="form-label">Maximum Position Size</label>
+                    <input type="number" class="form-control" id="${componentId}-max-position" value="1.0" min="0.1" max="10" step="0.1">
+                </div>
+            `;
+        } else if (func === 'volatility_position_sizer') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-window" class="form-label">Volatility Window</label>
+                    <input type="number" class="form-control" id="${componentId}-window" value="20" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-target-volatility" class="form-label">Target Volatility</label>
+                    <input type="number" class="form-control" id="${componentId}-target-volatility" value="0.01" min="0.001" step="0.001">
+                </div>
+                <div class="mb-3">
+                    <label for="${componentId}-max-position" class="form-label">Maximum Position Size</label>
+                    <input type="number" class="form-control" id="${componentId}-max-position" value="1.0" min="0.1" max="10" step="0.1">
+                </div>
+            `;
+        } else if (func === 'stop_loss') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-stop-percent" class="form-label">Stop Loss Percentage</label>
+                    <input type="number" class="form-control" id="${componentId}-stop-percent" value="0.05" min="0.01" max="0.5" step="0.01">
+                </div>
+            `;
+        } else if (func === 'simple_execution') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-slippage" class="form-label">Slippage</label>
+                    <input type="number" class="form-control" id="${componentId}-slippage" value="0.001" min="0" max="0.1" step="0.001">
+                </div>
+            `;
+        } else if (func === 'trade_analyzer') {
+            configHTML += `
+                <div class="mb-3">
+                    <label for="${componentId}-price-col" class="form-label">Price Column</label>
+                    <select class="form-control" id="${componentId}-price-col">
+                        <option value="close" selected>Close</option>
+                        <option value="open">Open</option>
+                        <option value="high">High</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            `;
+        }
+        
+        configHTML += `
+            <div class="mt-3">
+                <button type="button" class="btn btn-primary" onclick="applyComponentConfig('${componentId}')">Apply Configuration</button>
+            </div>
+        `;
+        
+        configContainer.innerHTML = configHTML;
+    }
+    
+    function applyComponentConfig(componentId) {
+        // This function will be called when the "Apply Configuration" button is clicked
+        // It updates the component's configuration
+        
+        const component = document.querySelector(`[data-component-id="${componentId}"]`);
+        const name = document.getElementById(`${componentId}-name`).value;
+        
+        // Update component display name
+        component.querySelector('.component-name').textContent = name;
+        
+        // Show notification
+        alert('Configuration applied!');
+    }
+    
+    function saveStrategy() {
+        const name = document.getElementById('strategy-name').value;
+        const description = document.getElementById('strategy-description').value;
+        
+        if (!name) {
+            alert('Strategy name is required');
+            return;
+        }
+        
+        const componentElements = document.querySelectorAll('#selected-components .list-group-item[data-component-id]');
+        
+        if (componentElements.length === 0) {
+            alert('At least one component is required');
+            return;
+        }
+        
+        const components = [];
+        
+        componentElements.forEach(element => {
+            const id = element.getAttribute('data-component-id');
+            const type = element.getAttribute('data-component-type');
+            const func = element.getAttribute('data-component-function');
+            const name = document.getElementById(`${id}-name`)?.value || func + '_' + Math.floor(Math.random() * 1000);
+            
+            const parameters = {};
+            
+            // Collect parameters based on component type and function
+            if (func === 'sma' || func === 'ema') {
+                parameters.window = parseInt(document.getElementById(`${id}-window`)?.value || '20');
+                parameters.column = document.getElementById(`${id}-column`)?.value || 'close';
+            } else if (func === 'macd') {
+                parameters.fast_window = parseInt(document.getElementById(`${id}-fast-window`)?.value || '12');
+                parameters.slow_window = parseInt(document.getElementById(`${id}-slow-window`)?.value || '26');
+                parameters.signal_window = parseInt(document.getElementById(`${id}-signal-window`)?.value || '9');
+                parameters.column = document.getElementById(`${id}-column`)?.value || 'close';
+            } else if (func === 'rsi') {
+                parameters.window = parseInt(document.getElementById(`${id}-window`)?.value || '14');
+                parameters.column = document.getElementById(`${id}-column`)?.value || 'close';
+            } else if (func === 'bollinger_bands') {
+                parameters.window = parseInt(document.getElementById(`${id}-window`)?.value || '20');
+                parameters.num_std = parseFloat(document.getElementById(`${id}-num-std`)?.value || '2.0');
+                parameters.column = document.getElementById(`${id}-column`)?.value || 'close';
+            } else if (func === 'dual_ma_crossover') {
+                parameters.fast_period = parseInt(document.getElementById(`${id}-fast-period`)?.value || '20');
+                parameters.slow_period = parseInt(document.getElementById(`${id}-slow-period`)?.value || '50');
+                parameters.price_col = document.getElementById(`${id}-column`)?.value || 'close';
+            } else if (func === 'rsi_filter') {
+                parameters.threshold_low = parseInt(document.getElementById(`${id}-threshold-low`)?.value || '30');
+                parameters.threshold_high = parseInt(document.getElementById(`${id}-threshold-high`)?.value || '70');
+                parameters.price_col = document.getElementById(`${id}-column`)?.value || 'close';
+            } else if (func === 'macd_signal') {
+                parameters.fast_period = parseInt(document.getElementById(`${id}-fast-period`)?.value || '12');
+                parameters.slow_period = parseInt(document.getElementById(`${id}-slow-period`)?.value || '26');
+                parameters.signal_period = parseInt(document.getElementById(`${id}-signal-period`)?.value || '9');
+                parameters.price_col = document.getElementById(`${id}-column`)?.value || 'close';
+            } else if (func === 'position_sizer' || func === 'max_position_limit') {
+                parameters.max_position = parseFloat(document.getElementById(`${id}-max-position`)?.value || '1.0');
+            } else if (func === 'volatility_position_sizer') {
+                parameters.window = parseInt(document.getElementById(`${id}-window`)?.value || '20');
+                parameters.target_volatility = parseFloat(document.getElementById(`${id}-target-volatility`)?.value || '0.01');
+                parameters.max_position = parseFloat(document.getElementById(`${id}-max-position`)?.value || '1.0');
+            } else if (func === 'stop_loss') {
+                parameters.stop_percent = parseFloat(document.getElementById(`${id}-stop-percent`)?.value || '0.05');
+            } else if (func === 'simple_execution') {
+                parameters.slippage = parseFloat(document.getElementById(`${id}-slippage`)?.value || '0.001');
+            } else if (func === 'trade_analyzer') {
+                parameters.price_col = document.getElementById(`${id}-price-col`)?.value || 'close';
+            }
+            
+            components.push({
+                name: name,
+                type: type,
+                function: func,
+                parameters: parameters
+            });
+        });
+        
+        const strategyData = {
+            name: name,
+            description: description,
+            components: components
+        };
+        
+        // Save strategy
+        fetch('/api/strategies', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(strategyData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Strategy created successfully!');
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createStrategyModal'));
+                modal.hide();
+                // Reload strategies
+                loadStrategies();
+            } else {
+                alert('Error creating strategy: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error creating strategy:', error);
+            alert('Error creating strategy: ' + error);
+        });
+    }
+    
+    function showStrategyDetails(strategyId) {
+        fetch(`/api/strategies/${strategyId}`)
+            .then(response => response.json())
+            .then(strategy => {
+                const detailsContainer = document.getElementById('strategy-details-content');
+                
+                let componentsHtml = '';
+                if (strategy.components && strategy.components.length > 0) {
+                    componentsHtml = '<div class="mt-4"><h5>Components</h5><ul class="list-group">';
+                    
+                    strategy.components.forEach(component => {
+                        componentsHtml += `
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold">${component.name}</span>
+                                        <span class="badge bg-secondary ms-2">${component.type}</span>
+                                        <span class="badge bg-info ms-2">${component.function}</span>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-info" data-bs-toggle="collapse" data-bs-target="#params-${component.name}">Parameters</button>
+                                    </div>
+                                </div>
+                                <div class="collapse mt-2" id="params-${component.name}">
+                                    <div class="card card-body">
+                                        <code>${JSON.stringify(component.parameters, null, 2)}</code>
+                                    </div>
+                                </div>
+                            </li>
+                        `;
+                    });
+                    
+                    componentsHtml += '</ul></div>';
+                }
+                
+                detailsContainer.innerHTML = `
+                    <h4>${strategy.name}</h4>
+                    <p>${strategy.description || 'No description'}</p>
+                    <div class="alert alert-info">
+                        Strategy ID: <code>${strategy.id}</code>
+                    </div>
+                    ${componentsHtml}
+                `;
+                
+                // Set strategy ID for backtest and deploy buttons
+                document.getElementById('backtest-strategy-btn').setAttribute('data-strategy-id', strategy.id);
+                document.getElementById('deploy-strategy-btn').setAttribute('data-strategy-id', strategy.id);
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('strategyDetailsModal'));
+                modal.show();
+                
+                // Add event listeners
+                document.getElementById('backtest-strategy-btn').addEventListener('click', function() {
+                    window.location.href = `/backtest?strategy=${strategy.id}`;
+                });
+                
+                document.getElementById('deploy-strategy-btn').addEventListener('click', function() {
+                    window.location.href = `/deploy?strategy=${strategy.id}`;
+                });
+            })
+            .catch(error => {
+                console.error('Error loading strategy details:', error);
+                alert('Error loading strategy details: ' + error);
+            });
+    }
+</script>
+{% endblock %}

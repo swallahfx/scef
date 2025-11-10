@@ -1,0 +1,1 @@
+{"id": "3e152ca3-452d-43e4-8aaa-3c5136fa8ca2", "name": "Simple RSI", "description": "SIMPLE RSI", "components": [{"name": "rsi_149", "type": "indicator", "function": "rsi", "parameters": {"window": 14, "column": "close"}}]}

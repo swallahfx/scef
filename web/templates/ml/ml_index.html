@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}SCEF - Machine Learning{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Machine Learning</h1>
+    <div>
+        <a href="/ml/models" class="btn btn-primary">
+            <i class="bi bi-diagram-3"></i> ML Models
+        </a>
+        <a href="/ml/strategies" class="btn btn-success">
+            <i class="bi bi-robot"></i> ML Strategies
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Machine Learning Components</h5>
+            </div>
+            <div class="card-body">
+                <p>The SCEF Machine Learning module provides tools for creating and testing ML-based trading strategies.</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="bi bi-grid-3x3-gap"></i> Feature Engineering</h5>
+                                <p class="card-text">Extract meaningful features from market data for ML models.</p>
+                                <a href="/ml/features" class="btn btn-outline-primary">Explore Features</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="bi bi-cpu"></i> ML Models</h5>
+                                <p class="card-text">Create, train, and test machine learning models for prediction.</p>
+                                <a href="/ml/models" class="btn btn-outline-primary">Manage Models</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="bi bi-robot"></i> ML Strategies</h5>
+                                <p class="card-text">Build trading strategies powered by ML models and RL agents.</p>
+                                <a href="/ml/strategies" class="btn btn-outline-primary">Create Strategies</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Getting Started</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li>Upload market data from the <a href="/data">Market Data</a> page</li>
+                    <li>Create and train ML models on the <a href="/ml/models">ML Models</a> page</li>
+                    <li>Build ML-based strategies on the <a href="/ml/strategies">ML Strategies</a> page</li>
+                    <li>Backtest your strategies on the <a href="/backtest">Backtest</a> page</li>
+                    <li>Deploy to production from the <a href="/deploy">Deployment</a> page</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Available Techniques</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="/ml/models?type=classifier" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        Classification Models
+                        <span class="badge bg-primary rounded-pill">Random Forest, SVM, Logistic Regression</span>
+                    </a>
+                    <a href="/ml/models?type=regressor" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        Regression Models
+                        <span class="badge bg-primary rounded-pill">Linear, Random Forest, SVR</span>
+                    </a>
+                    <a href="/ml/strategies?type=rl" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        Reinforcement Learning
+                        <span class="badge bg-primary rounded-pill">DQN, Policy Gradients</span>
+                    </a>
+                    <a href="/ml/strategies?type=ensemble" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        Ensemble Methods
+                        <span class="badge bg-primary rounded-pill">Weighted Avg, Voting, Stacking</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

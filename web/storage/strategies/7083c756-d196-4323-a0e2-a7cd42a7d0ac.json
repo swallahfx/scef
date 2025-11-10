@@ -1,0 +1,1 @@
+{"id": "7083c756-d196-4323-a0e2-a7cd42a7d0ac", "name": "RSI", "description": "RSI", "components": [{"name": "rsi_102", "type": "indicator", "function": "rsi", "parameters": {"window": 14, "column": "close"}}]}

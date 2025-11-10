@@ -1,0 +1,545 @@
+{% extends "base.html" %}
+
+{% block title %}SCEF - Deployment{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Strategy Deployment</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Deploy Strategy</h5>
+            </div>
+            <div class="card-body">
+                <form id="deploy-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="strategy-select" class="form-label">Strategy</label>
+                            <select class="form-control" id="strategy-select" required>
+                                <option value="">Select a strategy...</option>
+                                <!-- Strategies will be loaded here -->
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="data-select" class="form-label">Market Data</label>
+                            <select class="form-control" id="data-select" required>
+                                <option value="">Select market data...</option>
+                                <!-- Market data will be loaded here -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="backtest-result" class="form-label">Backtest Result (Optional)</label>
+                        <select class="form-control" id="backtest-result">
+                            <option value="">None</option>
+                            <!-- Backtest results will be loaded here -->
+                        </select>
+                        <div class="form-text">If selected, deployment will use the settings from the backtest.</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="button" class="btn btn-primary" id="deploy-strategy-btn">Deploy Strategy</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Deployed Strategies</h5>
+            </div>
+            <div class="card-body">
+                <div id="deployed-strategies-list" class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Strategy</th>
+                                <th>Market Data</th>
+                                <th>Status</th>
+                                <th>Last Run</th>
+                                <th>Metrics</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deployed-strategies-table-body">
+                            <!-- Deployed strategies will be loaded here -->
+                            <tr>
+                                <td colspan="6" class="text-center">Loading deployed strategies...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deploy Settings Modal -->
+<div class="modal fade" id="deploySettingsModal" tabindex="-1" aria-labelledby="deploySettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deploySettingsModalLabel">Deployment Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="deploy-settings-form">
+                    <div class="mb-3">
+                        <label for="max-position" class="form-label">Maximum Position</label>
+                        <input type="number" class="form-control" id="max-position" value="1.0" min="0.1" step="0.1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="run-interval" class="form-label">Run Interval (seconds)</label>
+                        <input type="number" class="form-control" id="run-interval" value="60" min="10">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="apply-settings-btn">Deploy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Strategy Details Modal -->
+<div class="modal fade" id="strategyDetailsModal" tabindex="-1" aria-labelledby="strategyDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="strategyDetailsModalLabel">Strategy Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="strategy-details-content">
+                    <!-- Strategy details will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="resume-strategy-btn">Resume</button>
+                <button type="button" class="btn btn-warning" id="pause-strategy-btn">Pause</button>
+                <button type="button" class="btn btn-danger" id="stop-strategy-btn">Stop</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Store current strategy details
+    let currentDeployedId = null;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load strategies, market data, and deployed strategies
+        loadStrategies();
+        loadMarketData();
+        loadDeployedStrategies();
+        
+        // Check URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const strategyId = urlParams.get('strategy');
+        const dataId = urlParams.get('data');
+        const resultId = urlParams.get('result');
+        
+        if (strategyId) {
+            document.getElementById('strategy-select').value = strategyId;
+        }
+        
+        if (dataId) {
+            document.getElementById('data-select').value = dataId;
+        }
+        
+        if (resultId) {
+            // TODO: Load backtest results
+            // For now, just set the backtest result select value
+            document.getElementById('backtest-result').innerHTML = `
+                <option value="">None</option>
+                <option value="${resultId}" selected>Backtest Result ${resultId.substring(0, 8)}</option>
+            `;
+        }
+        
+        // Deploy strategy button
+        document.getElementById('deploy-strategy-btn').addEventListener('click', function() {
+            const settingsModal = new bootstrap.Modal(document.getElementById('deploySettingsModal'));
+            settingsModal.show();
+        });
+        
+        // Apply settings button
+        document.getElementById('apply-settings-btn').addEventListener('click', function() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deploySettingsModal'));
+            modal.hide();
+            deployStrategy();
+        });
+        
+        // Set up refresh interval
+        setInterval(loadDeployedStrategies, 5000);
+    });
+    
+    function loadStrategies() {
+        fetch('/api/strategies')
+            .then(response => response.json())
+            .then(strategies => {
+                const selectElement = document.getElementById('strategy-select');
+                
+                // Keep the first option (placeholder)
+                const placeholder = selectElement.options[0];
+                selectElement.innerHTML = '';
+                selectElement.appendChild(placeholder);
+                
+                strategies.forEach(strategy => {
+                    const option = document.createElement('option');
+                    option.value = strategy.id;
+                    option.textContent = strategy.name;
+                    selectElement.appendChild(option);
+                });
+                
+                // Check if a strategy was specified in the URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const strategyId = urlParams.get('strategy');
+                
+                if (strategyId) {
+                    selectElement.value = strategyId;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading strategies:', error);
+                showToast('Error loading strategies: ' + error, 'danger');
+            });
+    }
+    
+    function loadMarketData() {
+        fetch('/api/data')
+            .then(response => response.json())
+            .then(data => {
+                const selectElement = document.getElementById('data-select');
+                
+                // Keep the first option (placeholder)
+                const placeholder = selectElement.options[0];
+                selectElement.innerHTML = '';
+                selectElement.appendChild(placeholder);
+                
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.name;
+                    selectElement.appendChild(option);
+                });
+                
+                // Check if data was specified in the URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const dataId = urlParams.get('data');
+                
+                if (dataId) {
+                    selectElement.value = dataId;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading market data:', error);
+                showToast('Error loading market data: ' + error, 'danger');
+            });
+    }
+    
+    function loadDeployedStrategies() {
+        fetch('/api/deploy')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('deployed-strategies-table-body');
+                
+                if (data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No deployed strategies found. Deploy your first strategy!</td></tr>';
+                    return;
+                }
+                
+                tableBody.innerHTML = '';
+                
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    // Format metrics
+                    let metricsHtml = 'N/A';
+                    if (item.status && item.status.metrics) {
+                        const metrics = item.status.metrics;
+                        const totalReturn = metrics.cumulative_pnl || 0;
+                        const numTrades = metrics.num_trades || 0;
+                        
+                        metricsHtml = `
+                            <div>PnL: ${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(2)}</div>
+                            <div>Trades: ${numTrades}</div>
+                        `;
+                    }
+                    
+                    // Format last run time
+                    let lastRunTime = 'Never';
+                    if (item.status && item.status.last_run_time) {
+                        const date = new Date(item.status.last_run_time);
+                        lastRunTime = formatDate(date);
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${item.strategy_name}</td>
+                        <td>${item.data_name}</td>
+                        <td>${item.status ? getStatusIndicator(item.status.state) : 'N/A'}</td>
+                        <td>${lastRunTime}</td>
+                        <td>${metricsHtml}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary view-deployed-btn" data-deployed-id="${item.deployed_id}">View</button>
+                            <button class="btn btn-sm btn-outline-warning pause-btn" data-deployed-id="${item.deployed_id}" ${item.status && item.status.state === 'running' ? '' : 'disabled'}>Pause</button>
+                            <button class="btn btn-sm btn-outline-success resume-btn" data-deployed-id="${item.deployed_id}" ${item.status && item.status.state === 'paused' ? '' : 'disabled'}>Resume</button>
+                            <button class="btn btn-sm btn-outline-danger stop-btn" data-deployed-id="${item.deployed_id}" ${item.status && (item.status.state === 'running' || item.status.state === 'paused') ? '' : 'disabled'}>Stop</button>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+                // Add event listeners to buttons
+                document.querySelectorAll('.view-deployed-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const deployedId = this.getAttribute('data-deployed-id');
+                        viewDeployedStrategy(deployedId);
+                    });
+                });
+                
+                document.querySelectorAll('.pause-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const deployedId = this.getAttribute('data-deployed-id');
+                        pauseStrategy(deployedId);
+                    });
+                });
+                
+                document.querySelectorAll('.resume-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const deployedId = this.getAttribute('data-deployed-id');
+                        resumeStrategy(deployedId);
+                    });
+                });
+                
+                document.querySelectorAll('.stop-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const deployedId = this.getAttribute('data-deployed-id');
+                        stopStrategy(deployedId);
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Error loading deployed strategies:', error);
+                document.getElementById('deployed-strategies-table-body').innerHTML = 
+                    `<tr><td colspan="6" class="text-center text-danger">Error loading deployed strategies: ${error}</td></tr>`;
+            });
+    }
+    
+    function deployStrategy() {
+        const strategyId = document.getElementById('strategy-select').value;
+        const dataId = document.getElementById('data-select').value;
+        const backtestResultId = document.getElementById('backtest-result').value;
+        
+        // Validate selections
+        if (!strategyId) {
+            showToast('Please select a strategy', 'warning');
+            return;
+        }
+        
+        if (!dataId) {
+            showToast('Please select market data', 'warning');
+            return;
+        }
+        
+        // Get deployment settings
+        const settings = {
+            max_position: parseFloat(document.getElementById('max-position').value),
+            schedule: {
+                interval_seconds: parseInt(document.getElementById('run-interval').value)
+            },
+            market_data_config: {
+                symbols: ['SAMPLE'] // Using a placeholder for now
+            }
+        };
+        
+        // Deploy strategy
+        fetch('/api/deploy', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                strategy_id: strategyId,
+                data_id: dataId,
+                config: settings
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success message
+                showToast('Strategy deployed successfully!', 'success');
+                
+                // Reload deployed strategies
+                loadDeployedStrategies();
+            } else {
+                showToast('Error deploying strategy: ' + (data.message || 'Unknown error'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error deploying strategy:', error);
+            showToast('Error deploying strategy: ' + error, 'danger');
+        });
+    }
+    
+    function viewDeployedStrategy(deployedId) {
+        // Store current deployed ID
+        currentDeployedId = deployedId;
+        
+        // Load strategy details
+        fetch(`/api/deploy/${deployedId}`)
+            .then(response => response.json())
+            .then(data => {
+                const detailsContainer = document.getElementById('strategy-details-content');
+                
+                // Format metrics
+                let metricsHtml = '<p>No metrics available</p>';
+                if (data.status && data.status.metrics) {
+                    const metrics = data.status.metrics;
+                    
+                    metricsHtml = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Cumulative PnL:</strong> ${metrics.cumulative_pnl ? (metrics.cumulative_pnl >= 0 ? '+' : '') + metrics.cumulative_pnl.toFixed(2) : 'N/A'}</p>
+                                <p><strong>Number of Trades:</strong> ${metrics.num_trades || 0}</p>
+                                <p><strong>Win Rate:</strong> ${metrics.win_rate ? (metrics.win_rate * 100).toFixed(2) + '%' : 'N/A'}</p>
+                                <p><strong>Profit Factor:</strong> ${metrics.profit_factor ? metrics.profit_factor.toFixed(2) : 'N/A'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Current Position:</strong> ${data.status.current_position || 0}</p>
+                                <p><strong>Last Updated:</strong> ${metrics.last_updated ? formatDate(new Date(metrics.last_updated)) : 'N/A'}</p>
+                                <p><strong>Max Drawdown:</strong> ${metrics.drawdown ? (metrics.drawdown * 100).toFixed(2) + '%' : 'N/A'}</p>
+                                <p><strong>Sharpe Ratio:</strong> ${metrics.sharpe_ratio ? metrics.sharpe_ratio.toFixed(2) : 'N/A'}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                detailsContainer.innerHTML = `
+                    <h4>${data.strategy_name}</h4>
+                    <div class="alert alert-info">
+                        <p><strong>Status:</strong> ${getStatusIndicator(data.status.state)}</p>
+                        <p><strong>Market Data:</strong> ${data.data_name}</p>
+                        <p><strong>Last Run:</strong> ${data.status.last_run_time ? formatDate(new Date(data.status.last_run_time)) : 'Never'}</p>
+                        <p><strong>Next Run:</strong> ${data.status.next_run_time ? formatDate(new Date(data.status.next_run_time)) : 'N/A'}</p>
+                    </div>
+                    
+                    <h5 class="mt-4">Performance Metrics</h5>
+                    <div class="card">
+                        <div class="card-body">
+                            ${metricsHtml}
+                        </div>
+                    </div>
+                `;
+                
+                // Update buttons based on status
+                const resumeBtn = document.getElementById('resume-strategy-btn');
+                const pauseBtn = document.getElementById('pause-strategy-btn');
+                const stopBtn = document.getElementById('stop-strategy-btn');
+                
+                resumeBtn.disabled = data.status.state !== 'paused';
+                pauseBtn.disabled = data.status.state !== 'running';
+                stopBtn.disabled = data.status.state !== 'running' && data.status.state !== 'paused';
+                
+                // Add event listeners to buttons
+                resumeBtn.onclick = function() {
+                    resumeStrategy(deployedId);
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('strategyDetailsModal'));
+                    modal.hide();
+                };
+                
+                pauseBtn.onclick = function() {
+                    pauseStrategy(deployedId);
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('strategyDetailsModal'));
+                    modal.hide();
+                };
+                
+                stopBtn.onclick = function() {
+                    stopStrategy(deployedId);
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('strategyDetailsModal'));
+                    modal.hide();
+                };
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('strategyDetailsModal'));
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error loading strategy details:', error);
+                showToast('Error loading strategy details: ' + error, 'danger');
+            });
+    }
+    
+    function pauseStrategy(deployedId) {
+        fetch(`/api/deploy/${deployedId}/pause`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast('Strategy paused successfully', 'success');
+                loadDeployedStrategies();
+            } else {
+                showToast('Error pausing strategy: ' + (data.message || 'Unknown error'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error pausing strategy:', error);
+            showToast('Error pausing strategy: ' + error, 'danger');
+        });
+    }
+    
+    function resumeStrategy(deployedId) {
+        fetch(`/api/deploy/${deployedId}/resume`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast('Strategy resumed successfully', 'success');
+                loadDeployedStrategies();
+            } else {
+                showToast('Error resuming strategy: ' + (data.message || 'Unknown error'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error resuming strategy:', error);
+            showToast('Error resuming strategy: ' + error, 'danger');
+        });
+    }
+    
+    function stopStrategy(deployedId) {
+        fetch(`/api/deploy/${deployedId}/stop`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast('Strategy stopped successfully', 'success');
+                loadDeployedStrategies();
+            } else {
+                showToast('Error stopping strategy: ' + (data.message || 'Unknown error'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error stopping strategy:', error);
+            showToast('Error stopping strategy: ' + error, 'danger');
+        });
+    }
+</script>
+{% endblock %}

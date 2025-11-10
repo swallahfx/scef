@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}SCEF - Home{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">Strategy Composition and Evaluation Framework</h1>
+    <p class="lead">A comprehensive framework for developing, testing, and deploying algorithmic trading strategies.</p>
+    <hr class="my-4">
+    <p>SCEF enables rapid composition and evaluation of trading strategies across the entire lifecycle from research to production.</p>
+    <div class="d-flex flex-wrap gap-2 mt-4">
+        <a href="/strategies" class="btn btn-primary">Create Strategies</a>
+        <a href="/data" class="btn btn-secondary">Manage Market Data</a>
+        <a href="/backtest" class="btn btn-success">Run Backtests</a>
+        <a href="/deploy" class="btn btn-danger">Deploy to Production</a>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-6">
+        <h2>Key Features</h2>
+        <ul class="list-group">
+            <li class="list-group-item">Functional DSL for Strategy Composition</li>
+            <li class="list-group-item">Optimized Technical Indicators</li>
+            <li class="list-group-item">Comprehensive Backtesting Engine</li>
+            <li class="list-group-item">Online Learning System</li>
+            <li class="list-group-item">Production Deployment System</li>
+        </ul>
+    </div>
+    <div class="col-md-6">
+        <h2>Getting Started</h2>
+        <p>Follow these steps to create and deploy your first trading strategy:</p>
+        <ol class="list-group list-group-numbered">
+            <li class="list-group-item">Create or upload market data</li>
+            <li class="list-group-item">Define a new strategy using the DSL</li>
+            <li class="list-group-item">Run backtests to evaluate performance</li>
+            <li class="list-group-item">Optimize parameters using online learning</li>
+            <li class="list-group-item">Deploy to production</li>
+        </ol>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h2>Quick Start</h2>
+            </div>
+            <div class="card-body">
+                <h5>Create Sample Data and Run a Simple Strategy</h5>
+                <div class="d-grid gap-2 d-md-block">
+                    <button id="createSampleDataBtn" class="btn btn-primary">Create Sample Data</button>
+                    <button id="createSampleStrategyBtn" class="btn btn-success" disabled>Create Sample Strategy</button>
+                    <button id="runSampleBacktestBtn" class="btn btn-warning" disabled>Run Backtest</button>
+                </div>
+                <div id="quickStartResults" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let sampleDataId = null;
+        let sampleStrategyId = null;
+        
+        // Create Sample Data
+        document.getElementById('createSampleDataBtn').addEventListener('click', function() {
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+            
+            fetch('/api/data/sample', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    days: 500,
+                    volatility: 0.01
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    sampleDataId = data.data_id;
+                    document.getElementById('quickStartResults').innerHTML += `
+                        <div class="alert alert-success">
+                            Sample data created successfully! ${data.summary.rows} rows from ${data.summary.start_date} to ${data.summary.end_date}
+                        </div>
+                    `;
+                    document.getElementById('createSampleStrategyBtn').disabled = false;
+                }
+            })
+            .catch(error => {
+                document.getElementById('quickStartResults').innerHTML += `
+                    <div class="alert alert-danger">
+                        Error creating sample data: ${error}
+                    </div>
+                `;
+            })
+            .finally(() => {
+                this.innerHTML = 'Create Sample Data';
+                this.disabled = false;
+            });
+        });
+        
+        // Create Sample Strategy
+        document.getElementById('createSampleStrategyBtn').addEventListener('click', function() {
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+            
+            fetch('/api/strategies', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: "Dual MA Crossover with RSI Filter",
+                    description: "A strategy combining moving average crossover signals with RSI filter",
+                    components: [
+                        {
+                            name: "fast_ma",
+                            type: "indicator",
+                            function: "sma",
+                            parameters: { window: 20 }
+                        },
+                        {
+                            name: "slow_ma",
+                            type: "indicator",
+                            function: "sma",
+                            parameters: { window: 50 }
+                        },
+                        {
+                            name: "rsi",
+                            type: "indicator",
+                            function: "rsi",
+                            parameters: { window: 14 }
+                        },
+                        {
+                            name: "ma_crossover",
+                            type: "signal",
+                            function: "dual_ma_crossover",
+                            parameters: { fast_period: 20, slow_period: 50 }
+                        },
+                        {
+                            name: "rsi_filter",
+                            type: "signal",
+                            function: "rsi_filter",
+                            parameters: { threshold_low: 30, threshold_high: 70 }
+                        },
+                        {
+                            name: "position_sizer",
+                            type: "allocation",
+                            function: "position_sizer",
+                            parameters: { max_position: 1.0 }
+                        },
+                        {
+                            name: "max_position",
+                            type: "risk_control",
+                            function: "max_position_limit",
+                            parameters: { max_position: 1.0 }
+                        },
+                        {
+                            name: "simple_execution",
+                            type: "execution",
+                            function: "simple_execution",
+                            parameters: { slippage: 0.001 }
+                        },
+                        {
+                            name: "trade_analyzer",
+                            type: "post_trade",
+                            function: "trade_analyzer",
+                            parameters: {}
+                        }
+                    ]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    sampleStrategyId = data.strategy_id;
+                    document.getElementById('quickStartResults').innerHTML += `
+                        <div class="alert alert-success">
+                            Sample strategy created successfully!
+                        </div>
+                    `;
+                    document.getElementById('runSampleBacktestBtn').disabled = false;
+                }
+            })
+            .catch(error => {
+                document.getElementById('quickStartResults').innerHTML += `
+                    <div class="alert alert-danger">
+                        Error creating sample strategy: ${error}
+                    </div>
+                `;
+            })
+            .finally(() => {
+                this.innerHTML = 'Create Sample Strategy';
+                this.disabled = false;
+            });
+        });
+        
+        // Run Sample Backtest
+        document.getElementById('runSampleBacktestBtn').addEventListener('click', function() {
+            if (!sampleDataId || !sampleStrategyId) {
+                document.getElementById('quickStartResults').innerHTML += `
+                    <div class="alert alert-danger">
+                        Please create sample data and strategy first.
+                    </div>
+                `;
+                return;
+            }
+            
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Running...';
+            
+            fetch('/api/backtest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    strategy_id: sampleStrategyId,
+                    data_id: sampleDataId,
+                    config: {
+                        starting_capital: 100000.0,
+                        commission_rate: 0.001,
+                        slippage_model: "percentage",
+                        slippage_value: 0.001
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const metrics = data.metrics;
+                    document.getElementById('quickStartResults').innerHTML += `
+                        <div class="alert alert-success">
+                            Backtest completed successfully!
+                        </div>
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5>Backtest Results</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Total Return:</strong> ${(metrics.total_return * 100).toFixed(2)}%</p>
+                                        <p><strong>Annual Return:</strong> ${(metrics.annual_return * 100).toFixed(2)}%</p>
+                                        <p><strong>Sharpe Ratio:</strong> ${metrics.sharpe_ratio.toFixed(2)}</p>
+                                        <p><strong>Max Drawdown:</strong> ${(metrics.max_drawdown * 100).toFixed(2)}%</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Volatility:</strong> ${(metrics.volatility * 100).toFixed(2)}%</p>
+                                        <p><strong>Win Rate:</strong> ${(metrics.win_rate * 100).toFixed(2)}%</p>
+                                        <p><strong>Profit Factor:</strong> ${metrics.profit_factor.toFixed(2)}</p>
+                                        <p><strong>Number of Trades:</strong> ${metrics.num_trades}</p>
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h6>Equity Curve</h6>
+                                        <img src="${data.plots.equity_curve}" class="img-fluid" alt="Equity Curve">
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h6>Positions Over Time</h6>
+                                        <img src="${data.plots.positions}" class="img-fluid" alt="Positions">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/backtest?result=${data.result_id}" class="btn btn-primary">View Detailed Results</a>
+                                <a href="/deploy?strategy=${sampleStrategyId}&data=${sampleDataId}" class="btn btn-danger">Deploy to Production</a>
+                            </div>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                document.getElementById('quickStartResults').innerHTML += `
+                    <div class="alert alert-danger">
+                        Error running backtest: ${error}
+                    </div>
+                `;
+            })
+            .finally(() => {
+                this.innerHTML = 'Run Backtest';
+                this.disabled = false;
+            });
+        });
+    });
+</script>
+{% endblock %}
