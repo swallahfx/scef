@@ -1,5 +1,4 @@
-# Create a Dockerfile in your project root
-echo "FROM python:3.10-slim
+FROM python:3.10-slim
 
 WORKDIR /app
 
